@@ -2,7 +2,7 @@
 
 ## Overview
 
-This project is a Discord bot API service that combines an Express.js web server with a Discord bot client. The application provides webhook-style endpoints for external services to send notifications to Discord channels through a bot interface. It uses Express.js for the REST API layer and Discord.js v14 for Discord integration.
+This project is a Discord bot API service that combines an Express.js web server with a Discord bot client, refactored with modular architecture for Render hosting. The application provides webhook-style endpoints for external services to send notifications to Discord channels through a bot interface. It uses Express.js for the REST API layer and Discord.js v14 for Discord integration.
 
 ## User Preferences
 
@@ -11,20 +11,22 @@ Language: Italian
 
 ## System Architecture
 
-The application follows a simple monolithic architecture with two main components:
+The application follows a modular architecture optimized for Render hosting with three main components:
 
-1. **Express.js REST API Server**: Handles incoming HTTP requests and provides authenticated endpoints
-2. **Discord Bot Client**: Manages Discord gateway connections and message posting
+1. **bot/client.js**: Discord client module with automatic login and graceful shutdown handling
+2. **server/webhook.js**: Express router module with authentication, validation, and Discord messaging logic
+3. **index.js**: Entry point that imports modules and starts the Express server
 
-The architecture is designed for simplicity and direct integration, avoiding complex patterns in favor of straightforward request-response flows.
+The modular design enables better code organization, easier testing, and improved compatibility with cloud hosting platforms like Render.
 
 ## Key Components
 
 ### Web Server (Express.js)
 - **Purpose**: Provides HTTP endpoints for external integrations
-- **Port**: 5000 (hardcoded as per system requirements)
+- **Port**: Dynamic port via process.env.PORT || 5000 (Render compatible)
 - **Authentication**: Bearer token-based authentication using API_SECRET
 - **Middleware**: JSON parsing and custom authentication middleware
+- **Routing**: Modular Express router system for better organization
 
 ### Discord Bot Client
 - **Framework**: Discord.js v14
@@ -85,4 +87,16 @@ The flow is synchronous and stateless, with no persistent data storage between r
 - Error logging for authentication failures
 - Environment validation logging at startup
 
-The deployment strategy prioritizes simplicity and reliability, making it suitable for containerized environments or traditional server deployments.
+The deployment strategy prioritizes simplicity and reliability, with specific optimizations for Render hosting including dynamic port configuration and modular architecture for better maintainability.
+
+## Recent Changes
+
+### July 30, 2025 - Modular Refactoring for Render
+- Refactored monolithic index.js into modular structure:
+  - `bot/client.js`: Isolated Discord client with connection management
+  - `server/webhook.js`: Express router with webhook handling logic
+  - `index.js`: Clean entry point importing and starting modules
+- Updated port configuration to use `process.env.PORT || 5000` for Render compatibility
+- Enhanced package.json with proper start script and metadata
+- Updated README.md with Render deployment instructions
+- All files synchronized to GitHub repository for seamless deployment
