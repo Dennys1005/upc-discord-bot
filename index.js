@@ -43,6 +43,6 @@ app.use((req, res) => {
 
 // Start the Express server
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(Express server running on http://0.0.0.0:${PORT});
-    console.log(Webhook endpoint available at: POST http://0.0.0.0:${PORT}/svincolato);
+    console.log(`Express server running on http://0.0.0.0:${PORT}`);
+    console.log(`Webhook endpoint available at: POST http://0.0.0.0:${PORT}/svincolato`);
 });
