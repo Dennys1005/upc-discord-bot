@@ -6,17 +6,22 @@ const router = express.Router();
 
 // Environment variables
 const DISCORD_CHANNEL_ID = process.env.DISCORD_CHANNEL_ID;
-const API_SECRET = process.env.API_SECRET;
+const API_SECRET = process.env.API_SECRET?.trim();
 
 if (!DISCORD_CHANNEL_ID || !API_SECRET) {
     console.error('Error: Missing DISCORD_CHANNEL_ID or API_SECRET environment variables');
     process.exit(1);
 }
 
-// Authentication middleware
+// 🔐 Authentication middleware
 const authenticateToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+    const token = authHeader && authHeader.split(' ')[1]?.trim();
+
+    const expectedToken = API_SECRET;
+
+    console.log('🧪 Token ricevuto:', token);
+    console.log('🔐 Token atteso:', expectedToken);
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
         return res.status(401).json({ 
@@ -25,7 +30,7 @@ const authenticateToken = (req, res, next) => {
         });
     }
 
-    if (token !== API_SECRET) {
+    if (token !== expectedToken) {
         return res.status(403).json({ 
             error: 'Forbidden', 
             message: 'Invalid API token' 
@@ -35,7 +40,7 @@ const authenticateToken = (req, res, next) => {
     next();
 };
 
-// Validation middleware for player release data
+// ✅ Validation middleware
 const validatePlayerData = (req, res, next) => {
     const { userId, username, previousTeamId, previousTeamName, timestamp, action, reason } = req.body;
     
@@ -57,7 +62,6 @@ const validatePlayerData = (req, res, next) => {
         });
     }
 
-    // Validate timestamp format
     const timestampDate = new Date(timestamp);
     if (isNaN(timestampDate.getTime())) {
         return res.status(400).json({
@@ -69,12 +73,11 @@ const validatePlayerData = (req, res, next) => {
     next();
 };
 
-// POST endpoint for player release webhooks
+// POST endpoint
 router.post('/svincolato', authenticateToken, validatePlayerData, async (req, res) => {
     try {
         const { userId, username, previousTeamId, previousTeamName, timestamp, action, reason } = req.body;
         
-        // Get the Discord channel
         const channel = await client.channels.fetch(DISCORD_CHANNEL_ID);
         
         if (!channel) {
@@ -85,7 +88,6 @@ router.post('/svincolato', authenticateToken, validatePlayerData, async (req, re
             });
         }
 
-        // Format the timestamp for display
         const releaseDate = new Date(timestamp);
         const formattedDate = releaseDate.toLocaleString('it-IT', {
             year: 'numeric',
@@ -95,7 +97,6 @@ router.post('/svincolato', authenticateToken, validatePlayerData, async (req, re
             minute: '2-digit'
         });
 
-        // Convert reason code to readable description
         let reasonDescription;
         switch (reason) {
             case 'voluntary_leave':
@@ -105,12 +106,11 @@ router.post('/svincolato', authenticateToken, validatePlayerData, async (req, re
                 reasonDescription = 'Giocatore rimosso dal capitano della squadra';
                 break;
             default:
-                reasonDescription = reason; // Fallback to original value if unknown
+                reasonDescription = reason;
         }
 
-        // Create the embed message
         const embed = new EmbedBuilder()
-            .setColor(0x00FF00) // Green color for player release
+            .setColor(0x00FF00)
             .setTitle('🆓 **Giocatore svincolato!**')
             .addFields(
                 { name: '👤 **Giocatore**', value: username, inline: true },
@@ -121,22 +121,19 @@ router.post('/svincolato', authenticateToken, validatePlayerData, async (req, re
             .setTimestamp()
             .setFooter({ text: 'Ultimate Pro Clubs' });
 
-        // Create the button
         const button = new ButtonBuilder()
             .setLabel('Visualizza giocatore')
             .setStyle(ButtonStyle.Link)
             .setURL(`https://app.ultimateproclubs.com/player/${userId}`);
 
-        const row = new ActionRowBuilder()
-            .addComponents(button);
+        const row = new ActionRowBuilder().addComponents(button);
 
-        // Send the message to Discord
         await channel.send({
             embeds: [embed],
             components: [row]
         });
 
-        console.log(`Player release notification sent for ${username} (ID: ${userId})`);
+        console.log(`✅ Notifica inviata per ${username} (ID: ${userId})`);
         
         res.status(200).json({
             success: true,
@@ -149,7 +146,7 @@ router.post('/svincolato', authenticateToken, validatePlayerData, async (req, re
         });
 
     } catch (error) {
-        console.error('Error processing player release webhook:', error);
+        console.error('❌ Errore durante l\'invio su Discord:', error);
         
         if (error.code === 10003) {
             return res.status(500).json({
